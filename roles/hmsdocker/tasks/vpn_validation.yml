@@ -8,14 +8,41 @@
   ansible.builtin.wait_for:
     timeout: 15
 
-- name: Get VPN IPs from containers
-  community.docker.docker_container_exec:
-    container: '{{ item }}'
-    command: sh -c 'command -v curl >/dev/null && curl -s api.ipify.org || wget -qO- api.ipify.org'
+- name: Gather VPN container state
+  community.docker.docker_container_info:
+    name: "{{ item }}"
   loop:
     - transmission
     - qbittorrent
     - deluge
+  when: item in enabled_containers
+  register: vpn_container_info
+
+- name: Build list of running VPN containers
+  ansible.builtin.set_fact:
+    vpn_running_containers: >-
+      {{
+        vpn_container_info.results
+        | selectattr('ansible_facts.containers', 'defined')
+        | selectattr('ansible_facts.containers.0.State.Status', 'equalto', 'running')
+        | map(attribute='item')
+        | list
+      }}
+  when: vpn_container_info is defined
+
+- name: Warn on VPN containers not running/restarting
+  ansible.builtin.debug:
+    msg: "Skipping VPN IP check for {{ item.item }} (state: {{ item.ansible_facts.containers.0.State.Status | default('unknown') }})"
+  loop: "{{ vpn_container_info.results | default([]) }}"
+  when:
+    - item.ansible_facts.containers is defined
+    - item.ansible_facts.containers.0.State.Status is not defined or item.ansible_facts.containers.0.State.Status != 'running'
+
+- name: Get VPN IPs from containers
+  community.docker.docker_container_exec:
+    container: '{{ item }}'
+    command: sh -c 'command -v curl >/dev/null && curl -s api.ipify.org || wget -qO- api.ipify.org'
+  loop: "{{ vpn_running_containers | default([]) }}"
   when:
     - item in enabled_containers
   register: vpn_public_ip
