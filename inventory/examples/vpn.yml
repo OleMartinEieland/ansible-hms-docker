@@ -1,0 +1,13 @@
+---
+# Sample VPN config for HMS-Docker.
+# Copy to inventory/group_vars/all/vpn.yml and fill in your real credentials.
+# This file is NOT used automatically; it is just a template.
+
+hmsdocker_vpn_type: openvpn
+hmsdocker_vpn_provider: PROTONVPN        # e.g., PROTONVPN, NORDVPN, etc.
+hmsdocker_vpn_user: "<vpn-username>"
+hmsdocker_vpn_pass: "<vpn-password>"
+
+# ProtonVPN/OpenVPN users: set the config file path so Transmission gets OPENVPN_CONFIG.
+transmission_ovpn_config_file: /config/openvpn/se.protonvpn.tcp.ovpn
+hmsdocker_vpn_openvpn_config: /config/openvpn/se.protonvpn.tcp.ovpn

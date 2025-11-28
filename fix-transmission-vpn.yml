@@ -1,0 +1,103 @@
+---
+# Fix Transmission container by adding OPENVPN_CONFIG env var when it is missing.
+
+- name: Fix Transmission Container VPN Config
+  hosts: hms-docker
+  become: true
+  gather_facts: true
+
+  vars:
+    container_name: transmission
+    openvpn_config: "{{ transmission_openvpn_config | default('/config/openvpn/se.protonvpn.tcp.ovpn') }}"
+
+  tasks:
+    - name: Check if Transmission container exists
+      ansible.builtin.command: >
+        docker ps -a --format '{% raw %}{{.Names}}{% endraw %}' --filter name=^{{ container_name }}$
+      register: container_check
+      changed_when: false
+
+    - name: Fail if container doesn't exist
+      ansible.builtin.fail:
+        msg: "Transmission container '{{ container_name }}' not found"
+      when: container_check.stdout == ""
+
+    - name: Stop Transmission container
+      ansible.builtin.command: docker stop {{ container_name }}
+      when: container_check.stdout != ""
+
+    - name: Get container image
+      ansible.builtin.command: >
+        docker inspect {{ container_name }} --format '{% raw %}{{.Config.Image}}{% endraw %}'
+      register: container_image
+      changed_when: false
+
+    - name: Get container environment variables
+      ansible.builtin.command: >
+        docker inspect {{ container_name }} --format '{% raw %}{{range .Config.Env}}{{println .}}{{end}}{% endraw %}'
+      register: container_env
+      changed_when: false
+
+    - name: Check if OPENVPN_CONFIG already set
+      ansible.builtin.set_fact:
+        openvpn_config_set: "{{ container_env.stdout is search('^OPENVPN_CONFIG=') }}"
+      changed_when: false
+
+    - name: Get container network mode
+      ansible.builtin.command: >
+        docker inspect {{ container_name }} --format '{% raw %}{{.HostConfig.NetworkMode}}{% endraw %}'
+      register: container_network
+      changed_when: false
+
+    - name: Get container volume mounts
+      ansible.builtin.command: >
+        docker inspect {{ container_name }} --format '{% raw %}{{range .Mounts}}-v {{.Source}}:{{.Destination}} {{end}}{% endraw %}'
+      register: container_mounts
+      changed_when: false
+
+    - name: Get container restart policy
+      ansible.builtin.command: >
+        docker inspect {{ container_name }} --format '{% raw %}{{.HostConfig.RestartPolicy.Name}}{% endraw %}'
+      register: container_restart_policy
+      changed_when: false
+
+    - name: Get all container environment variables as list
+      ansible.builtin.set_fact:
+        env_vars: "{{ container_env.stdout_lines | select('match', '^.+$') | list }}"
+      changed_when: false
+
+    - name: Add OPENVPN_CONFIG to environment variables
+      ansible.builtin.set_fact:
+        env_vars: "{{ env_vars + ['OPENVPN_CONFIG=' + openvpn_config] }}"
+      when: not openvpn_config_set
+
+    - name: Remove old container
+      ansible.builtin.command: docker rm {{ container_name }}
+      when: not openvpn_config_set
+
+    - name: Recreate container with OPENVPN_CONFIG
+      ansible.builtin.command: >
+        docker create
+        --name {{ container_name }}
+        --network {{ container_network.stdout }}
+        {{ container_mounts.stdout }}
+        {% for env_var in env_vars %}
+        -e {{ env_var }}
+        {% endfor %}
+        --restart {{ container_restart_policy.stdout }}
+        {{ container_image.stdout }}
+      when: not openvpn_config_set
+
+    - name: Start Transmission container
+      ansible.builtin.command: docker start {{ container_name }}
+      when: not openvpn_config_set
+
+    - name: Display container status
+      ansible.builtin.command: >
+        docker ps --filter name=^{{ container_name }}$ --format 'table {% raw %}{{.Names}}\t{{.Status}}\t{{.Ports}}{% endraw %}'
+      register: container_status
+      changed_when: false
+
+    - name: Show container status
+      ansible.builtin.debug:
+        msg: "{{ container_status.stdout_lines }}"

@@ -46,3 +46,8 @@ Please see the docs page at: https://docs.hmsdocker.dev
 Pull requests are always welcome!
 
 If you have suggestions for containers to add or any other improvements, please submit a [Discussion Post](https://github.com/ahembree/ansible-hms-docker/discussions)
+
+## Custom helpers (fork-only)
+
+- `inventory/examples/vpn.yml` – sample VPN config; copy to `inventory/group_vars/all/vpn.yml` and fill in real credentials (file is gitignored in that location).
+- `fix-transmission-vpn.yml` – optional playbook to add `OPENVPN_CONFIG` to the Transmission container if it was launched without that env var (used by AWX “fix” job template).
