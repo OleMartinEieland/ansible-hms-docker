@@ -13,7 +13,7 @@
     debug_mode: false
 
   roles:
-    - galaxy-roles/geerlingguy.docker
+    - geerlingguy.docker
 
   tasks:
     - name: Ensure Nvidia GPU role if enabled
