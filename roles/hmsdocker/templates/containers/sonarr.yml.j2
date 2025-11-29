@@ -20,6 +20,7 @@ services:
       {% if 'sonarr' in traefik_enabled_containers %}
       - traefik.enable=true
       - traefik.http.services.sonarr-${COMPOSE_PROJECT}.loadbalancer.server.port=8989
+      - traefik.http.services.sonarr-${COMPOSE_PROJECT}.loadbalancer.server.scheme=http
       - traefik.http.routers.sonarr-${COMPOSE_PROJECT}.rule=Host(`{{ hms_docker_container_map['sonarr']['proxy_host_rule'] | default('sonarr') }}.${HMSD_DOMAIN}`)
       - traefik.http.routers.sonarr-${COMPOSE_PROJECT}.middlewares={{ 'external' if 'sonarr' in expose_public_enabled_containers else 'internal' }}-{{ 'secured' if traefik_security_hardening else 'ipallowlist' }}@file{{ ',authentik-proxy-${COMPOSE_PROJECT}-sonarr-midware@docker' if 'sonarr' in authentik_enabled_containers }}
       {% endif %}
