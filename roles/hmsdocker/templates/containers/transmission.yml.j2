@@ -111,7 +111,7 @@ services:
       {% endif %}
     {% endif %}
     healthcheck:
-      test: curl -f http://localhost:8080/transmission/rpc || exit 1
+      test: sh -c 'code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/transmission/rpc); echo $code; echo $code | grep -qE "^(200|409)$"'
       interval: 10s
       timeout: 5s
       retries: 5
