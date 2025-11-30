@@ -14,7 +14,7 @@ traefik_security_hardening: no # default: no
 
 # Whether to use the staging/testing URL or production URL // default: "yes"
 # If SSL is enabled and this is set to yes, check to make sure the generated certificate is issued from the "STAGING" certificate authority before changing this to "no"
-traefik_ssl_use_letsencrypt_staging_url: yes
+traefik_ssl_use_letsencrypt_staging_url: no
 
 # If true, delete any existing production ACME store before Traefik starts to force a fresh production certificate
 traefik_ssl_force_prod_reissue: false

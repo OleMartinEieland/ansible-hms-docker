@@ -50,7 +50,8 @@ services:
       - 8989:8989
     {% endif %}
     healthcheck:
-      test: curl -f http://localhost:8989/health || exit 1
+      # /health can require auth in some Sonarr setups; /ping stays open and is enough for liveness
+      test: curl -f http://localhost:8989/ping || exit 1
       interval: 5s
       timeout: 2s
       retries: 3
@@ -108,7 +109,8 @@ services:
       - 8990:8989
     {% endif %}
     healthcheck:
-      test: curl -f http://localhost:8989/health || exit 1
+      # /health can require auth in some Sonarr setups; /ping stays open and is enough for liveness
+      test: curl -f http://localhost:8989/ping || exit 1
       interval: 5s
       timeout: 2s
       retries: 3
