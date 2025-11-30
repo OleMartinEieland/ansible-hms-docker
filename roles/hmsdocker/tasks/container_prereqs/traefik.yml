@@ -35,6 +35,24 @@
     mode: 0755
   register: traefik_certs_dir
 
+- name: Traefik Prereq - Remove staging ACME store when using production
+  ansible.builtin.file:
+    path: "{{ hms_docker_apps_path }}/traefik/config/certs/acme_staging.json"
+    state: absent
+  when:
+    - traefik_ssl_enabled
+    - not traefik_ssl_use_letsencrypt_staging_url | default(true)
+  notify: Restart traefik
+
+- name: Traefik Prereq - Force production ACME reissue if requested
+  ansible.builtin.file:
+    path: "{{ hms_docker_apps_path }}/traefik/config/certs/acme.json"
+    state: absent
+  when:
+    - traefik_ssl_enabled
+    - traefik_ssl_force_prod_reissue | default(false)
+  notify: Restart traefik
+
 - name: Traefik Prereq - Ensure Traefik Static file dir
   ansible.builtin.file:
     path: "{{ hmsdocker_traefik_static_config_location }}"

@@ -16,6 +16,9 @@ traefik_security_hardening: no # default: no
 # If SSL is enabled and this is set to yes, check to make sure the generated certificate is issued from the "STAGING" certificate authority before changing this to "no"
 traefik_ssl_use_letsencrypt_staging_url: yes
 
+# If true, delete any existing production ACME store before Traefik starts to force a fresh production certificate
+traefik_ssl_force_prod_reissue: false
+
 # SANs (Subject Alternative Names) to also provision certificates for
 # By default, this will create a "wildcard" (*) certificate
 # If you wish to create a certificate for another subdomain (such as '*.public'), you can add them here
