@@ -10,6 +10,7 @@ services:
       driver: json-file
     networks:
       - download_net
+      - proxy_net
     devices:
       - /dev/net/tun:/dev/net/tun
     cap_add:
@@ -111,7 +112,8 @@ services:
       {% endif %}
     {% endif %}
     healthcheck:
-      test: sh -c 'code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/transmission/rpc); echo $code; echo $code | grep -qE "^(200|409)$"'
+      # Use GET against the Web UI path; Transmission returns 200 here (HEAD can return 501)
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/transmission/web/ >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 5
